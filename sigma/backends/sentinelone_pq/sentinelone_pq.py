@@ -51,8 +51,13 @@ class SentinelOnePQBackend(TextQueryBackend):
         False: "false",
     }
 
-    startswith_expression : ClassVar[str] = "{field} contains {value}"
-    endswith_expression   : ClassVar[str] = "{field} contains {value}"
+    # startswith/endswith as anchored regular expressions: `contains` also matched the value in the middle
+    # (endswith "\\svchost.exe" matched paths continuing after it). PowerQuery's matches is case-insensitive,
+    # as Sigma's string matching is.
+    startswith_expression : ClassVar[str] = "{field} matches \"^{regex}\""
+    endswith_expression   : ClassVar[str] = "{field} matches \"{regex}$\""
+    # A value with wildcards inside it ("a*b") as one anchored regular expression, the wildcards as ".*".
+    wildcard_match_expression : ClassVar[str] = "{field} matches \"^{regex}$\""
     contains_expression   : ClassVar[str] = "{field} contains {value}"
 
     re_expression : ClassVar[str] = "{field} matches \"{regex}\""
