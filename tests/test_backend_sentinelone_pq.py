@@ -94,7 +94,7 @@ def test_sentinelone_pq_in_expression(sentinelone_pq_backend : SentinelOnePQBack
                         - valueC*
                 condition: sel
         """)
-    ) == ['event.type in:anycase ("Process Creation") and (tgt.process.image.path in:anycase ("valueA") or tgt.process.image.path in:anycase ("valueB") or tgt.process.image.path contains "valueC")']
+    ) == ['event.type in:anycase ("Process Creation") and (tgt.process.image.path in:anycase ("valueA") or tgt.process.image.path in:anycase ("valueB") or tgt.process.image.path matches "^valueC")']
 
 def test_sentinelone_pq_regex_query(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -125,7 +125,7 @@ def test_sentinelone_pq_cidr_query(sentinelone_pq_backend : SentinelOnePQBackend
                     DestinationIp|cidr: 192.168.0.0/16
                 condition: sel
         """)
-    ) == ['(event.category in:anycase ("dns","url","ip")) and dst.ip.address contains "192.168."']
+    ) == ['(event.category in:anycase ("dns","url","ip")) and dst.ip.address matches "^192\\\\.168\\\\."']
 
 def test_sentinelone_pq_escape_char_query(sentinelone_pq_backend: SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -140,7 +140,7 @@ def test_sentinelone_pq_escape_char_query(sentinelone_pq_backend: SentinelOnePQB
                     Image|startswith: C:\\Windows\\System32\\
                 condition: sel
         """)
-    ) == ['event.type in:anycase ("Process Creation") and tgt.process.image.path contains "C:\\\\Windows\\\\System32\\\\"']
+    ) == ['event.type in:anycase ("Process Creation") and tgt.process.image.path matches "^C:\\\\\\\\Windows\\\\\\\\System32\\\\\\\\"']
 
 def test_sentinelone_pq_default_output(sentinelone_pq_backend : SentinelOnePQBackend):
     """Test for output format default."""
@@ -176,3 +176,33 @@ def test_sentinelone_pq_json_output(sentinelone_pq_backend : SentinelOnePQBacken
 
 
 
+
+def test_sentinelone_pq_wildcard_inside_value(sentinelone_pq_backend: SentinelOnePQBackend):
+    assert sentinelone_pq_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: process_creation
+                product: test_product
+            detection:
+                sel:
+                    CommandLine: 'a(b)*c'
+                condition: sel
+        """)
+    ) == ['event.type="Process Creation" and tgt.process.cmdline matches "^a\\\\(b\\\\).*c$"']
+
+def test_sentinelone_pq_endswith_is_anchored(sentinelone_pq_backend: SentinelOnePQBackend):
+    assert sentinelone_pq_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: process_creation
+                product: test_product
+            detection:
+                sel:
+                    Image|endswith: '\\svchost.exe'
+                condition: sel
+        """)
+    ) == ['event.type="Process Creation" and tgt.process.image.path matches "\\\\\\\\svchost\\\\.exe$"']
