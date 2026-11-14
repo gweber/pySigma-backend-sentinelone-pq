@@ -264,7 +264,7 @@ def test_sentinelone_pq_process_creation_hashes(sentinelone_pq_backend : Sentine
                         - 'SHA256=A4E3C8B3E23CF0B4F2C9C6B3D1D7E9A0B6C5D4E3F2A1B0C9D8E7F6A5B4C3D2E1'
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and (endpoint.os="windows" and (tgt.process.image.sha1="5f1cbc3d99558307bc1250d084fa968521482025" or tgt.process.image.md5="987b65cd9b9f4e9a1afd8f8b48cf64a7" or tgt.process.image.sha256="a4e3c8b3e23cf0b4f2c9c6b3d1d7e9a0b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1"))']
+    ) == ['event.type in:anycase ("Process Creation") and (endpoint.os in:anycase ("windows") and (tgt.process.image.sha1 in:anycase ("5f1cbc3d99558307bc1250d084fa968521482025") or tgt.process.image.md5 in:anycase ("987b65cd9b9f4e9a1afd8f8b48cf64a7") or tgt.process.image.sha256 in:anycase ("a4e3c8b3e23cf0b4f2c9c6b3d1d7e9a0b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1")))']
 
 def test_sentinelone_pq_image_load_hashes(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -279,7 +279,7 @@ def test_sentinelone_pq_image_load_hashes(sentinelone_pq_backend : SentinelOnePQ
                     Hashes|contains: 'SHA1=5F1CBC3D99558307BC1250D084FA968521482025'
                 condition: sel
         """)
-    ) == ['event.type="Module Load" and (endpoint.os="windows" and module.sha1="5f1cbc3d99558307bc1250d084fa968521482025")']
+    ) == ['event.type in:anycase ("Module Load") and (endpoint.os in:anycase ("windows") and module.sha1 in:anycase ("5f1cbc3d99558307bc1250d084fa968521482025"))']
 
 def test_sentinelone_pq_hash_field_lowercase(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -294,7 +294,7 @@ def test_sentinelone_pq_hash_field_lowercase(sentinelone_pq_backend : SentinelOn
                     sha256: 'A4E3C8B3E23CF0B4F2C9C6B3D1D7E9A0B6C5D4E3F2A1B0C9D8E7F6A5B4C3D2E1'
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and (endpoint.os="windows" and tgt.process.image.sha256="a4e3c8b3e23cf0b4f2c9c6b3d1d7e9a0b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1")']
+    ) == ['event.type in:anycase ("Process Creation") and (endpoint.os in:anycase ("windows") and tgt.process.image.sha256 in:anycase ("a4e3c8b3e23cf0b4f2c9c6b3d1d7e9a0b6c5d4e3f2a1b0c9d8e7f6a5b4c3d2e1"))']
 
 def test_sentinelone_pq_hashes_unsupported_category(sentinelone_pq_backend : SentinelOnePQBackend):
     with pytest.raises(SigmaTransformationError, match="Hashes are supported"):
