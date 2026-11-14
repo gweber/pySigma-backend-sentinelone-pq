@@ -190,7 +190,7 @@ def test_sentinelone_pq_wildcard_inside_value(sentinelone_pq_backend: SentinelOn
                     CommandLine: 'a(b)*c'
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and tgt.process.cmdline matches "^a\\\\(b\\\\).*c$"']
+    ) == ['event.type in:anycase ("Process Creation") and tgt.process.cmdline matches "^a\\\\(b\\\\).*c$"']
 
 def test_sentinelone_pq_endswith_is_anchored(sentinelone_pq_backend: SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -205,4 +205,4 @@ def test_sentinelone_pq_endswith_is_anchored(sentinelone_pq_backend: SentinelOne
                     Image|endswith: '\\svchost.exe'
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and tgt.process.image.path matches "\\\\\\\\svchost\\\\.exe$"']
+    ) == ['event.type in:anycase ("Process Creation") and tgt.process.image.path matches "\\\\\\\\svchost\\\\.exe$"']
