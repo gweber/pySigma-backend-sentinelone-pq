@@ -221,3 +221,20 @@ def test_sentinelone_pq_regex_with_double_quote(sentinelone_pq_backend: Sentinel
                 condition: sel
         """)
     ) == ['event.type in:anycase ("Process Creation") and tgt.process.cmdline matches "tool\\\\.bat\\" --list"']
+
+def test_sentinelone_pq_not_single_comparison_grouped(sentinelone_pq_backend: SentinelOnePQBackend):
+    assert sentinelone_pq_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: process_creation
+                product: test_product
+            detection:
+                sel:
+                    Image: valueA
+                filter:
+                    CommandLine|contains: valueB
+                condition: sel and not filter
+        """)
+    ) == ['event.type in:anycase ("Process Creation") and (tgt.process.image.path in:anycase ("valueA") and (not (tgt.process.cmdline contains "valueB")))']

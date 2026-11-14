@@ -104,6 +104,20 @@ class SentinelOnePQBackend(TextQueryBackend):
     unbound_value_str_expression : ClassVar[str] = '"{value}"'
     unbound_value_num_expression : ClassVar[str] = '"{value}"'
 
+    def convert_condition_not(self, cond: ConditionNOT, state: ConversionState) -> Union[str, DeferredQueryExpression, None]:
+        """A negated single comparison is written in parentheses. PowerQuery binds `not` to the field name:
+        `not tgt.process.cmdline contains "x"` matched no event at all, `not (tgt.process.cmdline contains "x")`
+        everything without "x". pySigma groups only a negated and/or."""
+        arg = cond.args[0]
+        if arg is None or arg.__class__ in self.precedence:
+            return super().convert_condition_not(cond, state)
+        expr = self.convert_condition(arg, state)
+        if isinstance(expr, DeferredQueryExpression):
+            return expr.negate()
+        if expr is None:
+            return None
+        return self.not_token + self.token_separator + self.group_expression.format(expr=expr)
+
     def finalize_query_default(self, rule: SigmaRule, query: str, index: int, state: ConversionState) -> str:
         query += ' | columns ' + ",".join(rule.fields) if rule.fields else ''
         return query
