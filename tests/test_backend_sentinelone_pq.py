@@ -176,3 +176,20 @@ def test_sentinelone_pq_json_output(sentinelone_pq_backend : SentinelOnePQBacken
 
 
 
+
+def test_sentinelone_pq_not_single_comparison_grouped(sentinelone_pq_backend: SentinelOnePQBackend):
+    assert sentinelone_pq_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: process_creation
+                product: test_product
+            detection:
+                sel:
+                    Image: valueA
+                filter:
+                    CommandLine|contains: valueB
+                condition: sel and not filter
+        """)
+    ) == ['event.type="Process Creation" and (tgt.process.image.path="valueA" and (not (tgt.process.cmdline contains "valueB")))']
