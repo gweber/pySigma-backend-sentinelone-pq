@@ -100,7 +100,7 @@ def test_sentinelone_pq_file_mapping(sentinelone_pq_backend : SentinelOnePQBacke
                     User: administrator
                 condition: sel
         """)
-    ) == ['event.category="file" and (src.process.image.path="valueA" and src.process.cmdline="invoke-mimikatz" and src.process.parent.image.path="valueB" and src.process.parent.cmdline="Get-Path" and tgt.file.path="foo bar" and tgt.file.oldPath="bar foo" and src.process.user="administrator")']
+    ) == ['event.type="File Creation" and (src.process.image.path="valueA" and src.process.cmdline="invoke-mimikatz" and src.process.parent.image.path="valueB" and src.process.parent.cmdline="Get-Path" and tgt.file.path="foo bar" and tgt.file.oldPath="bar foo" and src.process.user="administrator")']
 
 def test_sentinelone_pq_image_load_mapping(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -247,3 +247,62 @@ def test_sentinelone_pq_unsupported_field_name(sentinelone_pq_backend : Sentinel
                 condition: sel
         """)
     )
+def test_sentinelone_pq_file_delete_eventtype(sentinelone_pq_backend : SentinelOnePQBackend):
+    assert sentinelone_pq_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: file_delete
+                product: test_product
+            detection:
+                sel:
+                    TargetFilename: valueA
+                condition: sel
+        """)
+    ) == ['event.type="File Deletion" and tgt.file.path="valueA"']
+
+def test_sentinelone_pq_registry_set_eventtype(sentinelone_pq_backend : SentinelOnePQBackend):
+    assert sentinelone_pq_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: registry_set
+                product: test_product
+            detection:
+                sel:
+                    TargetObject: valueA
+                condition: sel
+        """)
+    ) == ['(event.type in ("Registry Value Create","Registry Value Modified")) and registry.keyPath="valueA"']
+
+def test_sentinelone_pq_registry_add_eventtype(sentinelone_pq_backend : SentinelOnePQBackend):
+    assert sentinelone_pq_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: registry_add
+                product: test_product
+            detection:
+                sel:
+                    TargetObject: valueA
+                condition: sel
+        """)
+    ) == ['event.type="Registry Key Create" and registry.keyPath="valueA"']
+
+def test_sentinelone_pq_registry_delete_eventtype(sentinelone_pq_backend : SentinelOnePQBackend):
+    assert sentinelone_pq_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: registry_delete
+                product: test_product
+            detection:
+                sel:
+                    TargetObject: valueA
+                condition: sel
+        """)
+    ) == ['(event.type in ("Registry Key Delete","Registry Value Delete")) and registry.keyPath="valueA"']

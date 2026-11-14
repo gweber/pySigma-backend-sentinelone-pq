@@ -149,11 +149,12 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
                 LogsourceCondition(category="process_creation")
             ]
         ),
-        # Add ObjectType = "File"
+        # Add EventType = "File Creation": Sigma's file_event is a file created (Sysmon event 11). The
+        # category "file" also held File Deletion, Rename, Modification and Scan events.
         ProcessingItem(
             identifier="s1_pq_file_event_objecttype",
             transformation=AddConditionTransformation({
-                "event.category": "file"
+                "event.type": "File Creation"
             }),
             rule_conditions=[
                 LogsourceCondition(category="file_event")
@@ -179,11 +180,11 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
                 LogsourceCondition(category="file_rename")
             ]
         ),
-        # Add EventType = "File Delete"
+        # Add EventType = "File Deletion" (SentinelOne's name; "File Delete" matched no event)
         ProcessingItem(
             identifier="s1_pq_file_delete_eventtype",
             transformation=AddConditionTransformation({
-                "event.type": "File Delete"
+                "event.type": "File Deletion"
             }),
             rule_conditions=[
                 LogsourceCondition(category="file_delete")
@@ -209,17 +210,42 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
                 LogsourceCondition(category="pipe_creation")
             ]
         ),
-        # Add ObjectType for Registry Stuff
+        # Registry: each Sigma category as the SentinelOne event types it means (Sysmon events 12-14).
+        # registry_event is any of them; registry_add a key created, registry_delete a key or value
+        # deleted, registry_set a value set (created or modified).
         ProcessingItem(
             identifier="s1_pq_registry_eventtype",
             transformation=AddConditionTransformation({
                 "event.category": "registry"
             }),
-            rule_condition_linking=any,
             rule_conditions=[
-                LogsourceCondition(category="registry_add"),
-                LogsourceCondition(category="registry_delete"),
-                LogsourceCondition(category="registry_event"),
+                LogsourceCondition(category="registry_event")
+            ]
+        ),
+        ProcessingItem(
+            identifier="s1_pq_registry_add_eventtype",
+            transformation=AddConditionTransformation({
+                "event.type": "Registry Key Create"
+            }),
+            rule_conditions=[
+                LogsourceCondition(category="registry_add")
+            ]
+        ),
+        ProcessingItem(
+            identifier="s1_pq_registry_delete_eventtype",
+            transformation=AddConditionTransformation({
+                "event.type": ["Registry Key Delete", "Registry Value Delete"]
+            }),
+            rule_conditions=[
+                LogsourceCondition(category="registry_delete")
+            ]
+        ),
+        ProcessingItem(
+            identifier="s1_pq_registry_set_eventtype",
+            transformation=AddConditionTransformation({
+                "event.type": ["Registry Value Create", "Registry Value Modified"]
+            }),
+            rule_conditions=[
                 LogsourceCondition(category="registry_set")
             ]
         ),
