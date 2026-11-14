@@ -1,6 +1,7 @@
 from sigma.processing.conditions import LogsourceCondition
 from sigma.processing.transformations import AddConditionTransformation, FieldMappingTransformation, DetectionItemFailureTransformation, RuleFailureTransformation, SetStateTransformation, ChangeLogsourceTransformation
-from sigma.processing.conditions import LogsourceCondition, IncludeFieldCondition, ExcludeFieldCondition, RuleProcessingItemAppliedCondition
+from sigma.processing.conditions import LogsourceCondition, IncludeFieldCondition, ExcludeFieldCondition, RuleProcessingItemAppliedCondition, RuleContainsFieldCondition
+from sigma.processing.condition_expressions import parse_condition_expression
 from sigma.processing.pipeline import ProcessingItem, ProcessingPipeline
 from sigma.rule import SigmaDetectionItem
 from sigma.exceptions import SigmaTransformationError
@@ -235,15 +236,31 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
                 LogsourceCondition(category="dns")
             ]
         ),
-        # Add ObjectType for Network Stuff
+        # Network connections are the "ip" events (IP Connect, IP Listen). The dns and url events also
+        # carry processes and some a destination address (the resolver), so a rule on the process alone
+        # matched every DNS lookup and web request it made. Only a rule on DestinationHostname, which
+        # SentinelOne keeps on dns and url events, reads those as well.
         ProcessingItem(
             identifier="s1_pq_network_objecttype",
             transformation=AddConditionTransformation({
+                "event.category": "ip"
+            }),
+            rule_conditions={
+                "net": LogsourceCondition(category="network_connection"),
+                "host": RuleContainsFieldCondition(field="DestinationHostname"),
+            },
+            rule_condition_expression=parse_condition_expression("net and not host")
+        ),
+        ProcessingItem(
+            identifier="s1_pq_network_hostname_objecttype",
+            transformation=AddConditionTransformation({
                 "event.category": ["dns","url","ip"]
             }),
-            rule_conditions=[
-                LogsourceCondition(category="network_connection")
-            ]
+            rule_conditions={
+                "net": LogsourceCondition(category="network_connection"),
+                "host": RuleContainsFieldCondition(field="DestinationHostname"),
+            },
+            rule_condition_expression=parse_condition_expression("net and host")
         )
     ]
 

@@ -247,3 +247,18 @@ def test_sentinelone_pq_unsupported_field_name(sentinelone_pq_backend : Sentinel
                 condition: sel
         """)
     )
+def test_sentinelone_pq_network_without_hostname_is_ip_events(sentinelone_pq_backend : SentinelOnePQBackend):
+    assert sentinelone_pq_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: network_connection
+                product: test_product
+            detection:
+                sel:
+                    Image: valueA
+                    DestinationPort: 443
+                condition: sel
+        """)
+    ) == ['event.category="ip" and (src.process.image.path="valueA" and dst.port.number=443)']
