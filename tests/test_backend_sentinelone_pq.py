@@ -206,3 +206,18 @@ def test_sentinelone_pq_endswith_is_anchored(sentinelone_pq_backend: SentinelOne
                 condition: sel
         """)
     ) == ['event.type in:anycase ("Process Creation") and tgt.process.image.path matches "\\\\\\\\svchost\\\\.exe$"']
+
+def test_sentinelone_pq_regex_with_double_quote(sentinelone_pq_backend: SentinelOnePQBackend):
+    assert sentinelone_pq_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: process_creation
+                product: test_product
+            detection:
+                sel:
+                    CommandLine|re: 'tool\\.bat" --list'
+                condition: sel
+        """)
+    ) == ['event.type in:anycase ("Process Creation") and tgt.process.cmdline matches "tool\\\\.bat\\" --list"']
