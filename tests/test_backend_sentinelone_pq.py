@@ -20,7 +20,7 @@ def test_sentinelone_pq_and_expression(sentinelone_pq_backend : SentinelOnePQBac
                     ParentImage: valueB
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and (tgt.process.image.path="valueA" and src.process.image.path="valueB")']
+    ) == ['event.type in:anycase ("Process Creation") and (tgt.process.image.path in:anycase ("valueA") and src.process.image.path in:anycase ("valueB"))']
 
 def test_sentinelone_pq_or_expression(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -37,7 +37,7 @@ def test_sentinelone_pq_or_expression(sentinelone_pq_backend : SentinelOnePQBack
                     ParentImage: valueB
                 condition: 1 of sel*
         """)
-    ) == ['event.type="Process Creation" and (tgt.process.image.path="valueA" or src.process.image.path="valueB")']
+    ) == ['event.type in:anycase ("Process Creation") and (tgt.process.image.path in:anycase ("valueA") or src.process.image.path in:anycase ("valueB"))']
 
 def test_sentinelone_pq_and_or_expression(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -57,7 +57,7 @@ def test_sentinelone_pq_and_or_expression(sentinelone_pq_backend : SentinelOnePQ
                         - valueB2
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and ((tgt.process.image.path in ("valueA1","valueA2")) and (src.process.image.path in ("valueB1","valueB2")))']
+    ) == ['event.type in:anycase ("Process Creation") and ((tgt.process.image.path in:anycase ("valueA1","valueA2")) and (src.process.image.path in:anycase ("valueB1","valueB2")))']
 
 def test_sentinelone_pq_or_and_expression(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -76,7 +76,7 @@ def test_sentinelone_pq_or_and_expression(sentinelone_pq_backend : SentinelOnePQ
                     ParentImage: valueB2
                 condition: 1 of sel*
         """)
-    ) == ['event.type="Process Creation" and ((tgt.process.image.path="valueA1" and src.process.image.path="valueB1") or (tgt.process.image.path="valueA2" and src.process.image.path="valueB2"))']
+    ) == ['event.type in:anycase ("Process Creation") and ((tgt.process.image.path in:anycase ("valueA1") and src.process.image.path in:anycase ("valueB1")) or (tgt.process.image.path in:anycase ("valueA2") and src.process.image.path in:anycase ("valueB2")))']
 
 def test_sentinelone_pq_in_expression(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -94,7 +94,7 @@ def test_sentinelone_pq_in_expression(sentinelone_pq_backend : SentinelOnePQBack
                         - valueC*
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and (tgt.process.image.path="valueA" or tgt.process.image.path="valueB" or tgt.process.image.path contains "valueC")']
+    ) == ['event.type in:anycase ("Process Creation") and (tgt.process.image.path in:anycase ("valueA") or tgt.process.image.path in:anycase ("valueB") or tgt.process.image.path contains "valueC")']
 
 def test_sentinelone_pq_regex_query(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -110,7 +110,7 @@ def test_sentinelone_pq_regex_query(sentinelone_pq_backend : SentinelOnePQBacken
                     ParentImage: foo
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and (tgt.process.image.path matches "foo.*bar" and src.process.image.path="foo")']
+    ) == ['event.type in:anycase ("Process Creation") and (tgt.process.image.path matches "foo.*bar" and src.process.image.path in:anycase ("foo"))']
 
 def test_sentinelone_pq_cidr_query(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -125,7 +125,7 @@ def test_sentinelone_pq_cidr_query(sentinelone_pq_backend : SentinelOnePQBackend
                     DestinationIp|cidr: 192.168.0.0/16
                 condition: sel
         """)
-    ) == ['(event.category in ("dns","url","ip")) and dst.ip.address contains "192.168."']
+    ) == ['(event.category in:anycase ("dns","url","ip")) and dst.ip.address contains "192.168."']
 
 def test_sentinelone_pq_escape_char_query(sentinelone_pq_backend: SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -140,7 +140,7 @@ def test_sentinelone_pq_escape_char_query(sentinelone_pq_backend: SentinelOnePQB
                     Image|startswith: C:\\Windows\\System32\\
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and tgt.process.image.path contains "C:\\\\Windows\\\\System32\\\\"']
+    ) == ['event.type in:anycase ("Process Creation") and tgt.process.image.path contains "C:\\\\Windows\\\\System32\\\\"']
 
 def test_sentinelone_pq_default_output(sentinelone_pq_backend : SentinelOnePQBackend):
     """Test for output format default."""
@@ -156,7 +156,7 @@ def test_sentinelone_pq_default_output(sentinelone_pq_backend : SentinelOnePQBac
                     Image: valueA
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and tgt.process.image.path="valueA"']
+    ) == ['event.type in:anycase ("Process Creation") and tgt.process.image.path in:anycase ("valueA")']
 
 def test_sentinelone_pq_json_output(sentinelone_pq_backend : SentinelOnePQBackend):
     """Test for output format default."""
@@ -172,7 +172,7 @@ def test_sentinelone_pq_json_output(sentinelone_pq_backend : SentinelOnePQBacken
                     Image: valueA
                 condition: sel
         """), "json"
-    ) == {"queries":[{"query":'event.type="Process Creation" and tgt.process.image.path="valueA"', "title":"Test", "id":None, "description":None}]}
+    ) == {"queries":[{"query":'event.type in:anycase ("Process Creation") and tgt.process.image.path in:anycase ("valueA")', "title":"Test", "id":None, "description":None}]}
 
 
 

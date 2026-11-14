@@ -19,7 +19,7 @@ def test_sentinelone_pq_windows_os_filter(sentinelone_pq_backend : SentinelOnePQ
                     Image: valueA
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and (endpoint.os="windows" and tgt.process.image.path="valueA")']
+    ) == ['event.type in:anycase ("Process Creation") and (endpoint.os in:anycase ("windows") and tgt.process.image.path in:anycase ("valueA"))']
 
 def test_sentinelone_pq_linux_os_filter(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -34,7 +34,7 @@ def test_sentinelone_pq_linux_os_filter(sentinelone_pq_backend : SentinelOnePQBa
                     Image: valueA
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and (endpoint.os="linux" and tgt.process.image.path="valueA")']
+    ) == ['event.type in:anycase ("Process Creation") and (endpoint.os in:anycase ("linux") and tgt.process.image.path in:anycase ("valueA"))']
 
 def test_sentinelone_pq_osx_os_filter(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -49,7 +49,7 @@ def test_sentinelone_pq_osx_os_filter(sentinelone_pq_backend : SentinelOnePQBack
                     Image: valueA
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and (endpoint.os="osx" and tgt.process.image.path="valueA")']
+    ) == ['event.type in:anycase ("Process Creation") and (endpoint.os in:anycase ("osx") and tgt.process.image.path in:anycase ("valueA"))']
 
 def test_sentinelone_pq_process_creation_mapping(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -79,7 +79,7 @@ def test_sentinelone_pq_process_creation_mapping(sentinelone_pq_backend : Sentin
                     ParentCommandLine: Get-Path
                 condition: sel
         """)
-    ) == ['event.type="Process Creation" and (tgt.process.pid=12 and tgt.process.image.path="valueA" and tgt.process.displayName="foo bar" and tgt.process.displayName="bar foo" and tgt.process.publisher="foo foo" and tgt.process.cmdline="invoke-mimikatz" and tgt.process.image.path="/etc" and tgt.process.user="administrator" and tgt.process.sessionid=4 and tgt.process.integrityLevel="bar bar" and tgt.process.image.md5="asdfasdfasdfasdfasdf" and tgt.process.image.sha1="asdfasdfasdfasdfasdfasdf" and tgt.process.image.sha256="asdfasdfasdfasdfasdfasdfasdfasdf" and src.process.pid=13 and src.process.image.path="valueB" and src.process.cmdline="Get-Path")']
+    ) == ['event.type in:anycase ("Process Creation") and (tgt.process.pid=12 and tgt.process.image.path in:anycase ("valueA") and tgt.process.displayName in:anycase ("foo bar") and tgt.process.displayName in:anycase ("bar foo") and tgt.process.publisher in:anycase ("foo foo") and tgt.process.cmdline in:anycase ("invoke-mimikatz") and tgt.process.image.path in:anycase ("/etc") and tgt.process.user in:anycase ("administrator") and tgt.process.sessionid=4 and tgt.process.integrityLevel in:anycase ("bar bar") and tgt.process.image.md5 in:anycase ("asdfasdfasdfasdfasdf") and tgt.process.image.sha1 in:anycase ("asdfasdfasdfasdfasdfasdf") and tgt.process.image.sha256 in:anycase ("asdfasdfasdfasdfasdfasdfasdfasdf") and src.process.pid=13 and src.process.image.path in:anycase ("valueB") and src.process.cmdline in:anycase ("Get-Path"))']
 
 def test_sentinelone_pq_file_mapping(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -100,7 +100,7 @@ def test_sentinelone_pq_file_mapping(sentinelone_pq_backend : SentinelOnePQBacke
                     User: administrator
                 condition: sel
         """)
-    ) == ['event.category="file" and (src.process.image.path="valueA" and src.process.cmdline="invoke-mimikatz" and src.process.parent.image.path="valueB" and src.process.parent.cmdline="Get-Path" and tgt.file.path="foo bar" and tgt.file.oldPath="bar foo" and src.process.user="administrator")']
+    ) == ['event.category in:anycase ("file") and (src.process.image.path in:anycase ("valueA") and src.process.cmdline in:anycase ("invoke-mimikatz") and src.process.parent.image.path in:anycase ("valueB") and src.process.parent.cmdline in:anycase ("Get-Path") and tgt.file.path in:anycase ("foo bar") and tgt.file.oldPath in:anycase ("bar foo") and src.process.user in:anycase ("administrator"))']
 
 def test_sentinelone_pq_image_load_mapping(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -121,7 +121,7 @@ def test_sentinelone_pq_image_load_mapping(sentinelone_pq_backend : SentinelOneP
                     ImageLoaded: foo bar
                 condition: sel
         """)
-    ) == ['event.type="Module Load" and (src.process.image.path="valueA" and src.process.cmdline="invoke-mimikatz" and src.process.parent.image.path="valueB" and src.process.parent.cmdline="Get-Path" and module.sha1="asdfasdf" and module.md5="asdfasdfasdf" and module.path="foo bar")']
+    ) == ['event.type in:anycase ("Module Load") and (src.process.image.path in:anycase ("valueA") and src.process.cmdline in:anycase ("invoke-mimikatz") and src.process.parent.image.path in:anycase ("valueB") and src.process.parent.cmdline in:anycase ("Get-Path") and module.sha1 in:anycase ("asdfasdf") and module.md5 in:anycase ("asdfasdfasdf") and module.path in:anycase ("foo bar"))']
 
 def test_sentinelone_pq_pipe_creation_mapping(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -140,7 +140,7 @@ def test_sentinelone_pq_pipe_creation_mapping(sentinelone_pq_backend : SentinelO
                     PipeName: foo bar
                 condition: sel
         """)
-    ) == ['event.type="Named Pipe Creation" and (src.process.image.path="valueA" and src.process.cmdline="invoke-mimikatz" and src.process.parent.image.path="valueB" and src.process.parent.cmdline="Get-Path" and namedPipe.name="foo bar")']
+    ) == ['event.type in:anycase ("Named Pipe Creation") and (src.process.image.path in:anycase ("valueA") and src.process.cmdline in:anycase ("invoke-mimikatz") and src.process.parent.image.path in:anycase ("valueB") and src.process.parent.cmdline in:anycase ("Get-Path") and namedPipe.name in:anycase ("foo bar"))']
 
 def test_sentinelone_pq_registry_mapping(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -160,7 +160,7 @@ def test_sentinelone_pq_registry_mapping(sentinelone_pq_backend : SentinelOnePQB
                     Details: bar foo
                 condition: sel
         """)
-    ) == ['event.category="registry" and (src.process.image.path="valueA" and src.process.cmdline="invoke-mimikatz" and src.process.parent.image.path="valueB" and src.process.parent.cmdline="Get-Path" and registry.keyPath="foo bar" and registry.value="bar foo")']
+    ) == ['event.category in:anycase ("registry") and (src.process.image.path in:anycase ("valueA") and src.process.cmdline in:anycase ("invoke-mimikatz") and src.process.parent.image.path in:anycase ("valueB") and src.process.parent.cmdline in:anycase ("Get-Path") and registry.keyPath in:anycase ("foo bar") and registry.value in:anycase ("bar foo"))']
 
 def test_sentinelone_pq_dns_mapping(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -182,7 +182,7 @@ def test_sentinelone_pq_dns_mapping(sentinelone_pq_backend : SentinelOnePQBacken
                     record_type: bar bar
                 condition: sel
         """)
-    ) == ['event.category="dns" and (src.process.image.path="valueA" and src.process.cmdline="invoke-mimikatz" and src.process.parent.image.path="valueB" and src.process.parent.cmdline="Get-Path" and event.dns.request="foo bar" and event.dns.response="bar foo" and event.dns.request="foo foo" and event.dns.response="bar bar")']
+    ) == ['event.category in:anycase ("dns") and (src.process.image.path in:anycase ("valueA") and src.process.cmdline in:anycase ("invoke-mimikatz") and src.process.parent.image.path in:anycase ("valueB") and src.process.parent.cmdline in:anycase ("Get-Path") and event.dns.request in:anycase ("foo bar") and event.dns.response in:anycase ("bar foo") and event.dns.request in:anycase ("foo foo") and event.dns.response in:anycase ("bar bar"))']
 
 def test_sentinelone_pq_network_mapping(sentinelone_pq_backend : SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
@@ -211,7 +211,7 @@ def test_sentinelone_pq_network_mapping(sentinelone_pq_backend : SentinelOnePQBa
                     src_port: 8080
                 condition: sel
         """)
-    ) == ['(event.category in ("dns","url","ip")) and (src.process.image.path="valueA" and src.process.cmdline="invoke-mimikatz" and src.process.parent.image.path="valueB" and src.process.parent.cmdline="Get-Path" and (url.address="foo bar" or event.dns.request="foo bar") and dst.port.number=445 and dst.ip.address="0.0.0.0" and src.process.user="administrator" and src.ip.address="1.1.1.1" and src.port.number=135 and NetProtocolName="udp" and dst.ip.address="2.2.2.2" and src.ip.address="3.3.3.3" and dst.port.number=80 and src.port.number=8080)']
+    ) == ['(event.category in:anycase ("dns","url","ip")) and (src.process.image.path in:anycase ("valueA") and src.process.cmdline in:anycase ("invoke-mimikatz") and src.process.parent.image.path in:anycase ("valueB") and src.process.parent.cmdline in:anycase ("Get-Path") and (url.address in:anycase ("foo bar") or event.dns.request in:anycase ("foo bar")) and dst.port.number=445 and dst.ip.address in:anycase ("0.0.0.0") and src.process.user in:anycase ("administrator") and src.ip.address in:anycase ("1.1.1.1") and src.port.number=135 and NetProtocolName in:anycase ("udp") and dst.ip.address in:anycase ("2.2.2.2") and src.ip.address in:anycase ("3.3.3.3") and dst.port.number=80 and src.port.number=8080)']
 
 def test_sentinelone_pq_unsupported_rule_type(sentinelone_pq_backend : SentinelOnePQBackend):
   with pytest.raises(ValueError):

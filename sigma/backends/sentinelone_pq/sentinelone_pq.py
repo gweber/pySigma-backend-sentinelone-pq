@@ -31,6 +31,10 @@ class SentinelOnePQBackend(TextQueryBackend):
     and_token : ClassVar[str] = "and"
     not_token : ClassVar[str] = "not"
     eq_token : ClassVar[str] = "="
+    # Sigma matches strings case-insensitively. In PowerQuery `=` and `in` compare case-sensitively,
+    # `in:anycase` does not, so a string equals is written as a one-value in:anycase list. Numbers
+    # keep eq_token.
+    eq_expression : ClassVar[str] = "{field} in:anycase ({value})"
 
     field_quote : ClassVar[str] = "'"
     field_quote_pattern : ClassVar[Pattern] = re.compile(r"^\w\.+$")
@@ -87,7 +91,7 @@ class SentinelOnePQBackend(TextQueryBackend):
     convert_and_as_in : ClassVar[bool] = False                    # Convert AND as in-expression
     in_expressions_allow_wildcards : ClassVar[bool] = False       # Values in list can contain wildcards. If set to False (default) only plain values are converted into in-expressions.
     field_in_list_expression : ClassVar[str] = "{field} {op} ({list})"  # Expression for field in list of values as format string with placeholders {field}, {op} and {list}
-    or_in_operator : ClassVar[str] = "in"               # Operator used to convert OR into in-expressions. Must be set if convert_or_as_in is set
+    or_in_operator : ClassVar[str] = "in:anycase"       # Operator used to convert OR into in-expressions (case-insensitive, as Sigma matches)
     list_separator : ClassVar[str] = ","               # List element separator
 
     unbound_value_str_expression : ClassVar[str] = '"{value}"'
