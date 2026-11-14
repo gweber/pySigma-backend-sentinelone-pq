@@ -1,5 +1,5 @@
 from sigma.processing.conditions import LogsourceCondition
-from sigma.processing.transformations import AddConditionTransformation, FieldMappingTransformation, DetectionItemFailureTransformation, RuleFailureTransformation, SetStateTransformation, ChangeLogsourceTransformation
+from sigma.processing.transformations import AddConditionTransformation, FieldMappingTransformation, DetectionItemFailureTransformation, RuleFailureTransformation, SetStateTransformation, ChangeLogsourceTransformation, HashesFieldsDetectionItemTransformation, CaseTransformation
 from sigma.processing.conditions import LogsourceCondition, IncludeFieldCondition, ExcludeFieldCondition, RuleProcessingItemAppliedCondition
 from sigma.processing.pipeline import ProcessingItem, ProcessingPipeline
 from sigma.rule import SigmaDetectionItem
@@ -23,6 +23,10 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
         'event.type'
     ]
 
+    # Sigma's Hashes field ("SHA256=..., MD5=...") is split into one field per algorithm by pySigma's own
+    # transformation, for the categories whose events carry the hashes.
+    hash_fields = ['Hashes', 'Hash']
+
     translation_dict = {
         'process_creation':{
             "ProcessId":"tgt.process.pid",
@@ -39,6 +43,9 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
             "md5":"tgt.process.image.md5",
             "sha1":"tgt.process.image.sha1",
             "sha256":"tgt.process.image.sha256",
+            "MD5":"tgt.process.image.md5",
+            "SHA1":"tgt.process.image.sha1",
+            "SHA256":"tgt.process.image.sha256",
             "ParentProcessId":"src.process.pid",
             "ParentImage":"src.process.image.path",
             "ParentCommandLine":"src.process.cmdline",
@@ -59,7 +66,9 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
             "ParentImage":"src.process.parent.image.path",
             "ParentCommandLine":"src.process.parent.cmdline",
             "sha1":"module.sha1",
-            "md5": "module.md5"
+            "md5": "module.md5",
+            "SHA1":"module.sha1",
+            "MD5": "module.md5"
         },
         'pipe_creation':{
             "PipeName":"namedPipe.name",
@@ -318,6 +327,41 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
         )
     ]
 
+    hashes = [
+        ProcessingItem(
+            identifier="s1_pq_process_creation_hashes",
+            transformation=HashesFieldsDetectionItemTransformation(valid_hash_algos=["MD5", "SHA1", "SHA256"]),
+            rule_conditions=[
+                LogsourceCondition(category="process_creation")
+            ]
+        ),
+        ProcessingItem(
+            identifier="s1_pq_image_load_hashes",
+            transformation=HashesFieldsDetectionItemTransformation(valid_hash_algos=["MD5", "SHA1"]),
+            rule_conditions=[
+                LogsourceCondition(category="image_load")
+            ]
+        ),
+        # Hashes left over: a category whose events carry no hashes in SentinelOne.
+        ProcessingItem(
+            identifier="s1_pq_fail_hashes_not_supported",
+            transformation=InvalidFieldTransformation("Hashes are supported for process_creation (MD5, SHA1, SHA256) "
+                                                      "and image_load (MD5, SHA1)."),
+            field_name_conditions=[
+                IncludeFieldCondition(fields=hash_fields)
+            ]
+        ),
+        # SentinelOne stores hashes in lower case and compares them case-sensitively: an upper-case
+        # hash, as Sigma rules often write them, would match nothing.
+        ProcessingItem(
+            identifier="s1_pq_hashes_lowercase",
+            transformation=CaseTransformation(method="lower"),
+            field_name_conditions=[
+                IncludeFieldCondition(fields=["md5", "sha1", "sha256", "MD5", "SHA1", "SHA256"])
+            ]
+        ),
+    ]
+
     change_logsource_info = [
         # Add service to be SentinelOne for pretty much everything
         ProcessingItem(
@@ -365,7 +409,7 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
             transformation=InvalidFieldTransformation("This pipeline only supports the following fields:\n{" + 
             '}, {'.join(sorted(set(sum([list(translation_dict[x].keys()) for x in translation_dict.keys()],[])))) + '}'),
             field_name_conditions=[
-                ExcludeFieldCondition(fields=list(set(sum([list(translation_dict[x].keys()) for x in translation_dict.keys()],[]))) + general_supported_fields)
+                ExcludeFieldCondition(fields=list(set(sum([list(translation_dict[x].keys()) for x in translation_dict.keys()],[]))) + general_supported_fields + hash_fields)
             ]
         )
     ]
@@ -377,6 +421,7 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
             *unsupported_field_name,
             *os_filter,
             *object_event_type_filter,
+            *hashes,
             *field_mappings,
             *change_logsource_info,
             *unsupported_rule_types,
