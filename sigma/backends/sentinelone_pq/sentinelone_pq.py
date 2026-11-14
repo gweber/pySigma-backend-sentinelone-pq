@@ -57,7 +57,9 @@ class SentinelOnePQBackend(TextQueryBackend):
 
     re_expression : ClassVar[str] = "{field} matches \"{regex}\""
     re_escape_char : ClassVar[str] = "\\"
-    re_escape : ClassVar[Tuple[str]] = ("\\(", "\\)", "\\[", "\\]", "\\{", "\\}", "\\.", "\\*", "\\+", "\\?", "\\|", "\\^", "\\$",)  # Characters to escape in regex
+    # Characters to escape in regex. The double quote ends the PowerQuery string the regex is written in:
+    # a regex holding one (`\.bat" list`) was cut there and the query refused ("Start quote with no matching end quote").
+    re_escape : ClassVar[Tuple[str]] = ("\\(", "\\)", "\\[", "\\]", "\\{", "\\}", "\\.", "\\*", "\\+", "\\?", "\\|", "\\^", "\\$", '"',)
     re_escape_escape_char : bool = True
     re_flag_prefix : bool = False
 
