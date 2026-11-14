@@ -387,3 +387,19 @@ def test_sentinelone_pq_registry_delete_eventtype(sentinelone_pq_backend : Senti
                 condition: sel
         """)
     ) == ['(event.type in:anycase ("Registry Key Delete","Registry Value Delete")) and registry.keyPath in:anycase ("valueA")']
+
+def test_sentinelone_pq_network_without_hostname_is_ip_events(sentinelone_pq_backend : SentinelOnePQBackend):
+    assert sentinelone_pq_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test
+            status: test
+            logsource:
+                category: network_connection
+                product: test_product
+            detection:
+                sel:
+                    Image: valueA
+                    DestinationPort: 443
+                condition: sel
+        """)
+    ) == ['event.category in:anycase ("ip") and (src.process.image.path in:anycase ("valueA") and dst.port.number=443)']

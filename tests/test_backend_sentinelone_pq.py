@@ -125,7 +125,7 @@ def test_sentinelone_pq_cidr_query(sentinelone_pq_backend : SentinelOnePQBackend
                     DestinationIp|cidr: 192.168.0.0/16
                 condition: sel
         """)
-    ) == ['(event.category in:anycase ("dns","url","ip")) and dst.ip.address matches "^192\\\\.168\\\\."']
+    ) == ['event.category in:anycase ("ip") and dst.ip.address matches "^192\\\\.168\\\\."']
 
 def test_sentinelone_pq_escape_char_query(sentinelone_pq_backend: SentinelOnePQBackend):
     assert sentinelone_pq_backend.convert(
