@@ -23,6 +23,9 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
         'event.type'
     ]
 
+    # The machine an event happened on: every Deep Visibility event carries endpoint.name, whatever its category.
+    host_fields = {"ComputerName": "endpoint.name"}
+
     translation_dict = {
         'process_creation':{
             "ProcessId":"tgt.process.pid",
@@ -104,6 +107,9 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
             "src_port":"src.port.number"
         }
     }
+
+    for category in translation_dict.values():
+        category.update(host_fields)
 
     os_filter = [
         # Add EndpointOS = Linux

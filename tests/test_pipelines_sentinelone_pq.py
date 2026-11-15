@@ -247,3 +247,19 @@ def test_sentinelone_pq_unsupported_field_name(sentinelone_pq_backend : Sentinel
                 condition: sel
         """)
     )
+def test_sentinelone_pq_computername_in_every_category(sentinelone_pq_backend : SentinelOnePQBackend):
+    for category, prefix in (("process_creation", 'event.type="Process Creation" and '), ("dns_query", 'event.category="dns" and '),
+                             ("file_event", 'event.category="file" and ')):
+        assert sentinelone_pq_backend.convert(
+            SigmaCollection.from_yaml(f"""
+                title: Test
+                status: test
+                logsource:
+                    category: {category}
+                    product: test_product
+                detection:
+                    sel:
+                        ComputerName: HOST1
+                    condition: sel
+            """)
+        ) == [prefix + 'endpoint.name="HOST1"']
