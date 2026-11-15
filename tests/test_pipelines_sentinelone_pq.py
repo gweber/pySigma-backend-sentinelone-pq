@@ -421,3 +421,20 @@ def test_sentinelone_pq_computername_in_every_category(sentinelone_pq_backend : 
                     condition: sel
             """)
         ) == [prefix + 'endpoint.name in:anycase ("HOST1")']
+
+def test_sentinelone_pq_a_field_of_another_category_is_refused(sentinelone_pq_backend : SentinelOnePQBackend):
+    with pytest.raises(SigmaTransformationError, match="for dns"):
+        sentinelone_pq_backend.convert(
+            SigmaCollection.from_yaml("""
+                title: Test
+                status: test
+                logsource:
+                    category: dns_query
+                    product: test_product
+                detection:
+                    sel:
+                        QueryName: example.org
+                        User: valueA
+                    condition: sel
+            """)
+        )

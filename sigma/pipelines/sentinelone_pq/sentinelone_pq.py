@@ -455,15 +455,30 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
         )
     ]
 
+    # Which fields a rule may use is decided per log source category: a field another category maps (User
+    # for a process, on a DNS rule) passed a check against all of them together and reached the query unmapped,
+    # as a field Deep Visibility does not have, which it answers with no event rather than an error.
+    category_groups = {
+        "process_creation": ["process_creation"],
+        "file": ["file_change", "file_rename", "file_delete", "file_event"],
+        "image_load": ["image_load"],
+        "pipe_creation": ["pipe_creation"],
+        "registry": ["registry_add", "registry_delete", "registry_event", "registry_set"],
+        "dns": ["dns_query", "dns"],
+        "network": ["network_connection", "firewall"],
+    }
     unsupported_field_name = [
         ProcessingItem(
-            identifier='s1_pq_fail_field_not_supported',
-            transformation=InvalidFieldTransformation("This pipeline only supports the following fields:\n{" + 
-            '}, {'.join(sorted(set(sum([list(translation_dict[x].keys()) for x in translation_dict.keys()],[])))) + '}'),
+            identifier=f"s1_pq_fail_field_not_supported_{group}",
+            transformation=InvalidFieldTransformation(f"This pipeline supports the following fields for {group}:\n{{"
+                                                      + "}, {".join(sorted(translation_dict[group])) + "}"),
             field_name_conditions=[
-                ExcludeFieldCondition(fields=list(set(sum([list(translation_dict[x].keys()) for x in translation_dict.keys()],[]))) + general_supported_fields + hash_fields)
-            ]
+                ExcludeFieldCondition(fields=list(translation_dict[group]) + general_supported_fields + hash_fields)
+            ],
+            rule_condition_linking=any,
+            rule_conditions=[LogsourceCondition(category=c) for c in categories],
         )
+        for group, categories in category_groups.items()
     ]
 
     return ProcessingPipeline(
