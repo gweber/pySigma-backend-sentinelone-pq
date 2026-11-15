@@ -403,3 +403,21 @@ def test_sentinelone_pq_network_without_hostname_is_ip_events(sentinelone_pq_bac
                 condition: sel
         """)
     ) == ['event.category in:anycase ("ip") and (src.process.image.path in:anycase ("valueA") and dst.port.number=443)']
+
+def test_sentinelone_pq_computername_in_every_category(sentinelone_pq_backend : SentinelOnePQBackend):
+    for category, prefix in (("process_creation", 'event.type in:anycase ("Process Creation") and '),
+                             ("dns_query", 'event.category in:anycase ("dns") and '),
+                             ("file_event", 'event.type in:anycase ("File Creation") and ')):
+        assert sentinelone_pq_backend.convert(
+            SigmaCollection.from_yaml(f"""
+                title: Test
+                status: test
+                logsource:
+                    category: {category}
+                    product: test_product
+                detection:
+                    sel:
+                        ComputerName: HOST1
+                    condition: sel
+            """)
+        ) == [prefix + 'endpoint.name in:anycase ("HOST1")']
