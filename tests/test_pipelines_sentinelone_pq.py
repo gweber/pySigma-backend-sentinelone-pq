@@ -1,6 +1,7 @@
 import pytest
 from sigma.collection import SigmaCollection
 from sigma.backends.sentinelone_pq import SentinelOnePQBackend
+from sigma.exceptions import SigmaTransformationError
 
 @pytest.fixture
 def sentinelone_pq_backend():
@@ -247,3 +248,19 @@ def test_sentinelone_pq_unsupported_field_name(sentinelone_pq_backend : Sentinel
                 condition: sel
         """)
     )
+def test_sentinelone_pq_a_field_of_another_category_is_refused(sentinelone_pq_backend : SentinelOnePQBackend):
+    with pytest.raises(SigmaTransformationError, match="for dns"):
+        sentinelone_pq_backend.convert(
+            SigmaCollection.from_yaml("""
+                title: Test
+                status: test
+                logsource:
+                    category: dns_query
+                    product: test_product
+                detection:
+                    sel:
+                        QueryName: example.org
+                        User: valueA
+                    condition: sel
+            """)
+        )
