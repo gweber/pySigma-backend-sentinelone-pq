@@ -238,3 +238,61 @@ def test_sentinelone_pq_not_single_comparison_grouped(sentinelone_pq_backend: Se
                 condition: sel and not filter
         """)
     ) == ['event.type in:anycase ("Process Creation") and (tgt.process.image.path in:anycase ("valueA") and (not (tgt.process.cmdline contains "valueB")))']
+
+CORRELATION_BASE = """
+title: Renamed with an extension
+id: 0e95725d-7320-415d-80f7-004da920fc11
+name: renamed
+status: test
+logsource:
+    category: file_rename
+    product: test_product
+detection:
+    sel:
+        TargetFilename|contains: '.locked'
+    condition: sel
+---
+"""
+
+def test_sentinelone_pq_event_count_correlation(sentinelone_pq_backend: SentinelOnePQBackend):
+    assert sentinelone_pq_backend.convert(SigmaCollection.from_yaml(CORRELATION_BASE + """
+title: Many renames
+status: test
+correlation:
+    type: event_count
+    rules: [renamed]
+    group-by: [Image]
+    timespan: 5m
+    condition:
+        gte: 100
+"""))[-1] == ('event.type in:anycase ("File Rename") and tgt.file.path contains ".locked" '
+              "| group event_count = count() by timebucket = timebucket('5m'), src.process.image.path "
+              "| filter event_count >= 100")
+
+def test_sentinelone_pq_value_count_correlation_is_exact(sentinelone_pq_backend: SentinelOnePQBackend):
+    assert sentinelone_pq_backend.convert(SigmaCollection.from_yaml(CORRELATION_BASE + """
+title: Many files renamed
+status: test
+correlation:
+    type: value_count
+    rules: [renamed]
+    group-by: [Image]
+    timespan: 1h
+    condition:
+        field: TargetFilename
+        gte: 50
+"""))[-1] == ('event.type in:anycase ("File Rename") and tgt.file.path contains ".locked" '
+              "| group events = count() by timebucket = timebucket('1h'), src.process.image.path, tgt.file.path "
+              "| group value_count = count() by timebucket, src.process.image.path | filter value_count >= 50")
+
+def test_sentinelone_pq_temporal_correlation_is_refused(sentinelone_pq_backend: SentinelOnePQBackend):
+    with pytest.raises(Exception):
+        sentinelone_pq_backend.convert(SigmaCollection.from_yaml(CORRELATION_BASE + """
+title: Renamed then renamed
+status: test
+correlation:
+    type: temporal
+    rules: [renamed]
+    group-by: [Image]
+    timespan: 5m
+"""))

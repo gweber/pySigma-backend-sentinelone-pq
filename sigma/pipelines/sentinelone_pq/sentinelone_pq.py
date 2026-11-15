@@ -1,6 +1,6 @@
 from sigma.processing.conditions import LogsourceCondition
 from sigma.processing.transformations import AddConditionTransformation, FieldMappingTransformation, DetectionItemFailureTransformation, RuleFailureTransformation, SetStateTransformation, ChangeLogsourceTransformation, HashesFieldsDetectionItemTransformation, CaseTransformation
-from sigma.processing.conditions import LogsourceCondition, IncludeFieldCondition, ExcludeFieldCondition, RuleProcessingItemAppliedCondition, RuleContainsFieldCondition
+from sigma.processing.conditions import LogsourceCondition, IncludeFieldCondition, ExcludeFieldCondition, RuleProcessingItemAppliedCondition, RuleContainsFieldCondition, IsSigmaRuleCondition
 from sigma.processing.condition_expressions import parse_condition_expression
 from sigma.processing.pipeline import ProcessingItem, ProcessingPipeline
 from sigma.rule import SigmaDetectionItem
@@ -406,12 +406,13 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
     ]
 
     change_logsource_info = [
-        # Add service to be SentinelOne for pretty much everything
+        # Marks a rule whose log source the pipeline maps (s1_pq_fail_rule_not_supported asks for it). A marker
+        # only: replacing the log source with service "sentinelone" also blanked its category and product, so a
+        # correlation rule converted after the rules it refers to found no category and kept its group-by
+        # fields unmapped (Image instead of src.process.image.path).
         ProcessingItem(
             identifier="s1_pq_logsource",
-            transformation=ChangeLogsourceTransformation(
-                service="sentinelone"
-            ),
+            transformation=SetStateTransformation("s1_pq_logsource_mapped", True),
             rule_condition_linking=any,
             rule_conditions=[
                 LogsourceCondition(category="process_creation"),
@@ -435,14 +436,16 @@ def sentinelonepq_pipeline() -> ProcessingPipeline:
 
     unsupported_rule_types = [
         # Show error if unsupported option
+        # A detection rule whose log source the pipeline does not map. A correlation rule has no log source of
+        # its own (it refers to detection rules), so it is not one of these.
         ProcessingItem(
             identifier="s1_pq_fail_rule_not_supported",
-            rule_condition_linking=any,
             transformation=RuleFailureTransformation("Rule type not yet supported by the SentinelOne PQ Sigma backend"),
-            rule_condition_negation=True,
-            rule_conditions=[
-                RuleProcessingItemAppliedCondition("s1_pq_logsource")
-            ]
+            rule_conditions={
+                "detection": IsSigmaRuleCondition(),
+                "mapped": RuleProcessingItemAppliedCondition("s1_pq_logsource"),
+            },
+            rule_condition_expression=parse_condition_expression("detection and not mapped")
         )
     ]
 

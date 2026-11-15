@@ -104,6 +104,35 @@ class SentinelOnePQBackend(TextQueryBackend):
     unbound_value_str_expression : ClassVar[str] = '"{value}"'
     unbound_value_num_expression : ClassVar[str] = '"{value}"'
 
+    # Correlation rules (Sigma 2): the matching events grouped into time buckets and the groups filtered on
+    # their count. PowerQuery's timebucket('<span>') takes Sigma's timespans as written (30s, 5m, 1h, 1d were
+    # measured). value_count is exact: PowerQuery's estimate_distinct() is an estimate, so the distinct values
+    # are grouped first and the groups counted. Temporal correlations are not supported: they need each event
+    # marked with the rule it matched, which a PowerQuery filter cannot do.
+    correlation_methods : ClassVar[Dict[str, str]] = {
+        "default": "Events grouped into time buckets (timebucket), the groups filtered on their count",
+    }
+    default_correlation_method : ClassVar[str] = "default"
+    default_correlation_query : ClassVar[Dict[str, str]] = {"default": "{search} {aggregate} {condition}"}
+    correlation_search_single_rule_expression : ClassVar[str] = "{query}"
+    correlation_search_multi_rule_expression : ClassVar[str] = "{queries}"
+    correlation_search_multi_rule_query_expression : ClassVar[str] = "({query})"
+    correlation_search_multi_rule_query_expression_joiner : ClassVar[str] = " or "
+    correlation_search_field_normalization_expression : ClassVar[str] = ""
+    correlation_search_field_normalization_expression_joiner : ClassVar[str] = ""
+    event_count_aggregation_expression : ClassVar[Dict[str, str]] = {
+        "default": "| group event_count = count() by timebucket = timebucket('{timespan}'){groupby}",
+    }
+    value_count_aggregation_expression : ClassVar[Dict[str, str]] = {
+        "default": "| group events = count() by timebucket = timebucket('{timespan}'){groupby}, {field} "
+                   "| group value_count = count() by timebucket{groupby}",
+    }
+    groupby_expression : ClassVar[Dict[str, str]] = {"default": ", {fields}"}
+    groupby_field_expression : ClassVar[Dict[str, str]] = {"default": "{field}"}
+    groupby_field_expression_joiner : ClassVar[Dict[str, str]] = {"default": ", "}
+    event_count_condition_expression : ClassVar[Dict[str, str]] = {"default": "| filter event_count {op} {count}"}
+    value_count_condition_expression : ClassVar[Dict[str, str]] = {"default": "| filter value_count {op} {count}"}
+
     def convert_condition_not(self, cond: ConditionNOT, state: ConversionState) -> Union[str, DeferredQueryExpression, None]:
         """A negated single comparison is written in parentheses. PowerQuery binds `not` to the field name:
         `not tgt.process.cmdline contains "x"` matched no event at all, `not (tgt.process.cmdline contains "x")`
